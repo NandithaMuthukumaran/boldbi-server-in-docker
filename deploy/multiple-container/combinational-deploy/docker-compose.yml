@@ -178,6 +178,25 @@ services:
         timeout: 10s
         retries: 5
 
+  bold-mcp:
+    container_name: bold_mcp_container
+    image: us-docker.pkg.dev/boldbi-294612/boldbi/bold-mcp:16.3.5
+    restart: always
+    volumes:
+      - boldservices_data:/application/app_data
+    networks:
+      - boldservices
+    depends_on:
+      bi-web:
+        condition: service_started
+      id-web:
+        condition: service_healthy
+    healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost/health"]
+        interval: 10s
+        timeout: 10s
+        retries: 5
+
   reports-web:
     container_name: reports_web_container
     image: us-docker.pkg.dev/boldreports/multi-container/boldreports-server:14.1.18
@@ -275,6 +294,43 @@ services:
         timeout: 10s
         retries: 5
 
+  reports-ai:
+    container_name: reports_ai_container
+    image: us-docker.pkg.dev/boldreports/multi-container/boldreports-ai:14.1.18
+    restart: always
+    volumes:
+      - boldservices_data:/application/app_data
+    networks:
+      - boldservices
+    depends_on:
+      reports-web:
+        condition: service_started
+      id-web:
+        condition: service_healthy
+    healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost/health-check"]
+        interval: 10s
+        timeout: 10s
+        retries: 5
+
+  reports-mcp:
+    container_name: reports_mcp_container
+    image: us-docker.pkg.dev/boldreports/multi-container/boldreports-mcp:14.1.18
+    restart: always
+    volumes:
+      - boldservices_data:/application/app_data
+    networks:
+      - boldservices
+    depends_on:
+      reports-web:
+        condition: service_started
+      id-web:
+        condition: service_healthy
+    healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost/health-check"]
+        interval: 10s
+        timeout: 10s
+        retries: 5
 
   reverse-proxy:
     container_name: nginx
@@ -308,6 +364,8 @@ services:
         condition: service_started
       bold-ai:
         condition: service_started
+      bold-mcp:
+        condition: service_started
       reports-web:
         condition: service_started
       reports-api:
@@ -317,6 +375,10 @@ services:
       reports-reportservice:
         condition: service_started
       reports-viewer:
+        condition: service_started
+      reports-ai:
+        condition: service_started
+      reports-mcp:
         condition: service_started
   pgdb:
     image: postgres:17
